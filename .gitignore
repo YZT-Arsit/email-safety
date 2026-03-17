@@ -1,0 +1,72 @@
+# OS / IDE
+.DS_Store
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment files
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local models and checkpoints
+models/
+outputs/dapt_multilingual_bert/
+outputs/multilingual_dapt_comparison/*/best_model.pt
+outputs/semi_supervised_comparison/*/best_model.pt
+outputs/transformer_round1/
+
+# Large or private data
+spam_email_data.log
+data/raw/
+data/sample/*.log
+data/annotation/*.csv
+data/annotation/*.json
+data/annotation/gold/*.csv
+data/annotation/gold/*.json
+data/annotation/silver/*.csv
+data/annotation/silver/*.json
+data/annotation/semi_supervised/*.csv
+data/annotation/semi_supervised/*.json
+data/processed/
+data/mlm_corpus/mail_corpus.txt
+
+# Large outputs and intermediate predictions
+outputs/predictions/
+outputs/formal_baselines/
+outputs/modelscope_download/
+outputs/multilingual_dapt_comparison/
+outputs/semi_supervised_comparison/
+outputs/relabel_pool/
+outputs/reports/
+outputs/round2_comparison/
+outputs/submissions/
+
+# Keep public final summary artifacts
+!outputs/final_summary/
+!outputs/final_summary/final_closed_loop_results.csv
+!outputs/final_summary/final_closed_loop_summary.md
+!outputs/final_summary/final_interview_bullets.md
+
+# Small public metadata that is safe to keep if desired
+!data/sample/README.md
+
+# 忽略旧数据备份文件夹
+archive/

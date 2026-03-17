@@ -1,0 +1,70 @@
+labels:
+  advertisement:
+    min_score: 2
+    patterns:
+      - field: subject
+        regex: "(发票|开票|推广|营销|合作|展会|代办|供应|优惠|促销|广告)"
+        weight: 2
+      - field: content
+        regex: "(报价|代理|联系方式|电话|vx|微信|商务合作|免费)"
+        weight: 1
+      - field: url
+        regex: "(http|www\\.)"
+        weight: 1
+
+  phishing:
+    min_score: 2
+    patterns:
+      - field: subject
+        regex: "(账号|账户|验证|升级|异常登录|blocked|quarantine|邮箱配置|密码重置)"
+        weight: 2
+      - field: content
+        regex: "(点击|立即验证|重新登录|安全警告|释放邮件|验证失败|账号异常)"
+        weight: 2
+      - field: from
+        regex: "(support|security|admin|service)"
+        weight: 1
+
+  impersonation:
+    min_score: 2
+    patterns:
+      - field: fromname
+        regex: "(财务|领导|经理|主任|ceo|hr|人事|采购)"
+        weight: 2
+      - field: subject
+        regex: "(紧急|请尽快|转账|汇款|付款|审批)"
+        weight: 2
+      - field: from
+        regex: "(@qq\\.com|@163\\.com|@gmail\\.com|@outlook\\.com)"
+        weight: 1
+
+  malicious_link_or_attachment:
+    min_score: 2
+    patterns:
+      - field: url
+        regex: "(bit\\.ly|tinyurl|\\.top|\\.xyz|\\.click|\\.icu|\\.zip|/update/|/login/)"
+        weight: 2
+      - field: attach
+        regex: "(exe|js|vbs|scr|hta|docm|xlsm|zip|rar|7z)"
+        weight: 2
+      - field: content
+        regex: "(附件|下载|安装|启用宏|解压)"
+        weight: 1
+
+  black_industry_or_policy_violation:
+    min_score: 2
+    patterns:
+      - field: subject
+        regex: "(办证|私彩|博彩|代开发票|贷款秒批|刷单|灰产|外挂|数据资源)"
+        weight: 2
+      - field: content
+        regex: "(私下交易|绕过审核|批量账号|黑客|暗网|外挂)"
+        weight: 2
+
+fallback_label: uncertain
+label_priority:
+  - phishing
+  - impersonation
+  - malicious_link_or_attachment
+  - black_industry_or_policy_violation
+  - advertisement

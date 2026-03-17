@@ -1,0 +1,32 @@
+project:
+  seed: 42
+  output_dir: outputs/transformer_round1
+
+data:
+  input_csv: data/annotation/gold/gold_v2.csv
+  processed_dir: data/processed/transformer_round1
+  id_column: id
+  label_column: manual_label
+  train_ratio: 0.7
+  valid_ratio: 0.15
+  test_ratio: 0.15
+
+fields:
+  text_fields: [subject, content, doccontent]
+
+preprocess:
+  lowercase: true
+  remove_urls: false
+  max_text_length: 5000
+
+model:
+  pretrained_model_name: bert-base-chinese
+  max_length: 256
+  num_labels: 5
+
+train:
+  epochs: 3
+  batch_size: 8
+  lr: 2e-5
+  weight_decay: 0.01
+  num_workers: 0

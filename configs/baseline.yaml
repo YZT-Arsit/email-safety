@@ -1,0 +1,64 @@
+project:
+  seed: 42
+  output_dir: outputs
+
+data:
+  train_path: data/raw/train.log
+  valid_path: data/raw/valid.log
+  test_path: data/raw/test.log
+  raw_format: auto   # auto|log|csv|jsonl
+  id_column: id
+  label_column: label
+  num_classes: 5
+  valid_size: 0.2
+  stratify: true
+
+fields:
+  text_fields: [subject, content, doccontent]
+  structured_fields:
+    - url
+    - htmltag
+    - attach
+    - sender
+    - from
+    - fromname
+    - xmailer
+    - ip
+    - region
+    - regionip
+    - recviplist
+    - wlistcnt
+    - dwlistcnt
+    - rcpt
+    - authuser
+    - licenseid
+
+preprocess:
+  lowercase: true
+  remove_urls: false
+  max_text_length: 5000
+
+model:
+  model_type: logistic_regression   # logistic_regression|lightgbm
+  use_structured_features: true
+  tfidf:
+    max_features: 80000
+    ngram_range: [1, 2]
+    min_df: 2
+    max_df: 0.98
+    sublinear_tf: true
+  logistic_regression:
+    C: 4.0
+    max_iter: 300
+    class_weight: balanced
+  lightgbm:
+    n_estimators: 600
+    learning_rate: 0.05
+    num_leaves: 63
+    max_depth: -1
+    subsample: 0.9
+    colsample_bytree: 0.8
+
+train:
+  save_model_name: baseline_model.joblib
+  save_submission_name: submission.csv
