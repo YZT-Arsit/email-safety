@@ -1,0 +1,13 @@
+{
+  "raw_rows": 24000,
+  "retained_rows": 23717,
+  "retention_rate": 0.9882083333333334,
+  "avg_length": 221.22119155036472,
+  "length_summary": {
+    "min": 20,
+    "p25": 77.0,
+    "p50": 174.0,
+    "p75": 319.0,
+    "max": 1032
+  }
+}
