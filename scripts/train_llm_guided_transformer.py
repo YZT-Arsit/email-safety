@@ -213,7 +213,13 @@ def main():
     valid_hints = _build_risk_hints(valid_df, data_cfg["reasoning_column"], data_cfg["reasoning_summary_column"], int(train_cfg.get("hint_max_chars", 160))) if use_risk_hint else None
     test_hints = _build_risk_hints(test_df, data_cfg["reasoning_column"], data_cfg["reasoning_summary_column"], int(train_cfg.get("hint_max_chars", 160))) if use_risk_hint else None
 
-    tokenizer = AutoTokenizer.from_pretrained(model_cfg["pretrained_model_name"])
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(model_cfg["pretrained_model_name"], local_files_only=True)
+    except OSError as exc:
+        raise RuntimeError(
+            "Failed to load local tokenizer. Please download a ModelScope checkpoint first and set "
+            "model.pretrained_model_name to a local directory, for example models/bert-base-multilingual-cased."
+        ) from exc
     train_labels = train_df[data_cfg["label_column"]].map(label_to_id).values
     valid_labels = valid_df[data_cfg["label_column"]].map(label_to_id).values
     test_labels = test_df[data_cfg["label_column"]].map(label_to_id).values

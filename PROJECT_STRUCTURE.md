@@ -1,77 +1,27 @@
 # PROJECT_STRUCTURE
 
-## Top-Level Layout
-- `README.md`: GitHub homepage and project overview
-- `RUNBOOK.md`: full reproduction manual
-- `PROJECT_STRUCTURE.md`: repository layout and publishing guidance
-- `requirements.txt`: Python dependencies
-- `.gitignore`: files and directories excluded from GitHub
-- `configs/`: active config files used by the final closed loop
-- `data/`: annotation assets, processed splits, corpus artifacts, and optional samples
-- `docs/`: taxonomy, summary, and interview-facing docs
-- `models/`: local model cache and checkpoints, not committed
-- `outputs/`: experiment outputs; only `outputs/final_summary/` is intended for GitHub
-- `scripts/`: final closed-loop entrypoints
+## Top-Level Directories
+- `README.md`: project homepage for GitHub and interviews
+- `RUNBOOK.md`: reproducible execution guide
+- `PROJECT_STRUCTURE.md`: repository layout and publishing policy
+- `configs/`: active config files for baseline, Transformer, and LLM-guided runs
+- `scripts/`: runnable entrypoints for the current public pipeline
 - `src/`: reusable package code
-- `archive/`: legacy scripts/configs from earlier iterative stages
-- `tests/`: lightweight smoke checks for repository layout
+- `docs/`: taxonomy, summary, and interview notes
+- `data/`: local data artifacts, mostly private and ignored by Git
+- `outputs/`: local experiment outputs; only `outputs/final_summary/` is public by default
+- `archive/`: legacy iteration artifacts kept for reference
+- `tests/`: lightweight repo smoke checks
 
-## Data Directories
-- `data/sample/`: tiny redacted examples or placeholder docs only
-- `data/annotation/`: Gold, silver, semi-supervised datasets and stats
-- `data/processed/`: reproducible train/valid/test splits and processed tables
-- `data/mlm_corpus/`: MLM training corpus and corpus stats
-
-## Artifact Types
-- Raw data:
-  - `spam_email_data.log`
-  - any large raw logs under `data/raw/`
-  - keep local, do not commit
-- Intermediate artifacts:
-  - teacher predictions
-  - checkpoints
-  - split files
-  - training logs
-  - keep local, regenerate when needed
-- Final artifacts:
-  - `outputs/final_summary/final_closed_loop_results.csv`
-  - `outputs/final_summary/final_closed_loop_summary.md`
-  - `outputs/final_summary/final_interview_bullets.md`
-  - safe to commit
-
-## What Should Go To GitHub
-Commit:
-- `README.md`
-- `RUNBOOK.md`
-- `PROJECT_STRUCTURE.md`
-- `requirements.txt`
-- `.gitignore`
-- `configs/`
-- `docs/`
-- `scripts/`
-- `src/`
-- `archive/`
-- `tests/`
-- `outputs/final_summary/`
-- small JSON summaries if they help explain results
-
-Do not commit:
-- `models/`
-- `spam_email_data.log`
-- `data/raw/`
-- large local caches
-- large experiment checkpoints
-- full prediction dumps
-- notebook caches
-- IDE files
-- virtual environments
-
-## Final Entry Scripts
-The active public pipeline keeps only these scripts in `scripts/`:
+## Active Script Surface
+Current primary scripts:
 - `download_model_from_modelscope.py`
 - `build_mlm_corpus.py`
 - `train_dapt_mlm.py`
 - `run_multilingual_dapt_comparison.py`
+- `label_with_llm.py`
+- `train_llm_guided_transformer.py`
+- `compare_llm_guided_training.py`
 - `predict_all_unlabeled.py`
 - `predict_text_transformer.py`
 - `build_consensus_silver.py`
@@ -79,4 +29,48 @@ The active public pipeline keeps only these scripts in `scripts/`:
 - `run_semi_supervised_comparison.py`
 - `summarize_final_closed_loop.py`
 
-Legacy scripts remain available under `archive/scripts_legacy/` for reference but are not part of the recommended path. They include earlier baseline, annotation, and fusion utilities used during project iteration.
+Support script:
+- `check_llm_guided_quality.py`
+
+## Data Layout
+- `data/sample/`: placeholder docs or tiny redacted examples only
+- `data/annotation/`: Gold, silver, semi-supervised data tables and stats
+- `data/processed/`: train/valid/test splits and processed tables
+- `data/mlm_corpus/`: text corpus used for DAPT / MLM
+
+## Output Layout
+- `outputs/final_summary/`: safe public summary files
+- `outputs/formal_baselines/`: local baseline artifacts
+- `outputs/multilingual_dapt_comparison/`: local DAPT comparison artifacts
+- `outputs/llm_guided/`: local LLM distillation experiments
+- `outputs/llm_labeling/`: local LLM labeling outputs
+- `outputs/semi_supervised_comparison/`: local semi-supervised outputs
+- `outputs/predictions/`: teacher prediction dumps
+- `outputs/dapt_multilingual_bert/`: local MLM training checkpoints
+
+## What Goes To GitHub
+Commit:
+- root docs (`README.md`, `RUNBOOK.md`, `PROJECT_STRUCTURE.md`)
+- `configs/`
+- `scripts/`
+- `src/`
+- `docs/`
+- `tests/`
+- `outputs/final_summary/`
+- small safe JSON summaries if they help explain results
+
+Do not commit:
+- `spam_email_data.log`
+- `models/`
+- raw or private annotation CSVs
+- prediction dumps
+- full checkpoints (`*.pt`, `*.bin`, `*.safetensors`)
+- large intermediate outputs
+
+## Public Storyline
+This repository is organized around one engineering narrative:
+1. build Gold from unlabeled enterprise mail logs
+2. use unlabeled data for DAPT and teacher prediction
+3. validate trusted silver carefully
+4. test whether LLM-generated supervision helps or hurts a smaller model
+5. keep only clean, reproducible artifacts in the public repo

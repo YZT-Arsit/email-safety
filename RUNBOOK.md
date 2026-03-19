@@ -1,41 +1,37 @@
 # RUNBOOK
 
-This document is the full reproduction guide for the final public version of the repository.
+This document is the reproducible command reference for the current public version of EmailSafety.
 
-## 1. Environment Setup
-Command:
+## 1. Environment
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## 2. Download Local Backbone From ModelScope
 Input:
-- repository source code
+- ModelScope model id
 
-Output:
-- local Python environment
-
-If memory is tight:
-- install dependencies first, then run one experiment at a time
-
-## 2. Download Local Model From ModelScope
 Command:
 ```bash
 python scripts/download_model_from_modelscope.py \
   --model-id AI-ModelScope/bert-base-multilingual-cased \
   --cache-dir models
 ```
-Input:
-- ModelScope model id
 
 Output:
 - `models/bert-base-multilingual-cased/`
 - `outputs/modelscope_download/download_summary.json`
 
-If storage is tight:
-- keep only the final local model directory and delete duplicate cache copies outside `models/bert-base-multilingual-cased/`
+If memory or storage is tight:
+- keep only the final local model dir
+- avoid duplicate cache copies
 
 ## 3. Build MLM Corpus
+Input:
+- `spam_email_data.log`
+
 Command:
 ```bash
 python scripts/build_mlm_corpus.py \
@@ -43,17 +39,16 @@ python scripts/build_mlm_corpus.py \
   --output-path data/mlm_corpus/mail_corpus.txt \
   --stats-json data/mlm_corpus/mail_corpus_stats.json
 ```
-Input:
-- `spam_email_data.log`
 
 Output:
 - `data/mlm_corpus/mail_corpus.txt`
 - `data/mlm_corpus/mail_corpus_stats.json`
 
-If storage is tight:
-- keep `mail_corpus_stats.json`; regenerate `mail_corpus.txt` when needed
+## 4. Run DAPT / MLM
+Input:
+- local multilingual BERT
+- MLM corpus
 
-## 4. Run DAPT / MLM Continued Pretraining
 Command:
 ```bash
 python scripts/train_dapt_mlm.py \
@@ -65,23 +60,23 @@ python scripts/train_dapt_mlm.py \
   --epochs 2 \
   --learning-rate 5e-5
 ```
-Input:
-- local multilingual BERT checkpoint
-- MLM corpus
 
 Output:
-- `outputs/dapt_multilingual_bert/checkpoint-epoch-*`
 - `outputs/dapt_multilingual_bert/final_model/`
 - `outputs/dapt_multilingual_bert/run_config.json`
 - `outputs/dapt_multilingual_bert/trainer_state.json`
 - `outputs/dapt_multilingual_bert/training_log.jsonl`
 
-If GPU memory is tight:
-- reduce `--batch-size` from `8` -> `4` -> `2`
-- reduce `--block-size` from `128` -> `64`
-- reduce `--epochs` to `1`
+Low-memory settings:
+- `--batch-size 8 -> 4 -> 2`
+- `--block-size 128 -> 64`
+- `--epochs 2 -> 1`
 
-## 5. Run Gold v2 Downstream Comparison
+## 5. Gold v2 Downstream Comparison
+Input:
+- `data/annotation/gold/gold_v2.csv`
+- local base and DAPT checkpoints
+
 Command:
 ```bash
 python scripts/run_multilingual_dapt_comparison.py \
@@ -95,28 +90,81 @@ python scripts/run_multilingual_dapt_comparison.py \
   --epochs 3 \
   --lr 2e-5
 ```
-Input:
-- `data/annotation/gold/gold_v2.csv`
-- local base model dir
-- local DAPT model dir
 
 Output:
-- `data/processed/multilingual_dapt_comparison/train.csv`
-- `data/processed/multilingual_dapt_comparison/valid.csv`
-- `data/processed/multilingual_dapt_comparison/test.csv`
 - `outputs/multilingual_dapt_comparison/results_summary.csv`
-- per-experiment metrics under `outputs/multilingual_dapt_comparison/*/`
+- per-run metrics and checkpoints under `outputs/multilingual_dapt_comparison/`
 
-If GPU memory is tight:
-- reduce `--batch-size` from `8` -> `4`
-- reduce `--max-length` from `256` -> `192` or `128`
+Low-memory settings:
+- `--batch-size 8 -> 4`
+- `--max-length 256 -> 192 or 128`
 
-## 6. Predict the Full 24k Unlabeled Set
-Prerequisite:
-- baseline teacher models under `outputs/formal_baselines/models/` already exist locally
-- if not, regenerate them using the archived baseline scripts under `archive/scripts_legacy/`
+## 6. Automatic LLM Labeling
+Input:
+- Gold CSV or unlabeled log file
+- LLM API key
 
-Baseline teacher predictions:
+Command:
+```bash
+export DEEPSEEK_API_KEY="YOUR_API_KEY"
+
+python scripts/label_with_llm.py \
+  --input-path data/annotation/gold/gold_v2.csv \
+  --raw-format csv \
+  --api-url https://api.deepseek.com/v1/chat/completions \
+  --model deepseek-chat \
+  --max-workers 16 \
+  --silver-output outputs/llm_labeling/gold_v2_llm_silver.jsonl \
+  --hard-output outputs/llm_labeling/gold_v2_llm_hard.jsonl \
+  --summary-output outputs/llm_labeling/gold_v2_llm_summary.json
+```
+
+Output:
+- `outputs/llm_labeling/*.jsonl`
+- `outputs/llm_labeling/gold_v2_llm_summary.json`
+
+If API cost or rate limit is tight:
+- lower `--max-workers`
+- run a small `--limit` first
+
+## 7. Train LLM-Guided BERT
+Input:
+- `gold_v2_llm_guided.csv`
+- local multilingual BERT
+
+Plain baseline:
+```bash
+python scripts/train_llm_guided_transformer.py \
+  --config configs/llm_guided_transformer.yaml \
+  --output-dir outputs/llm_guided/plain_bert \
+  --no-use-risk-hint \
+  --no-use-soft-targets
+```
+
+Best current soft-distill setting:
+```bash
+python scripts/train_llm_guided_transformer.py \
+  --config configs/llm_guided_transformer.yaml \
+  --output-dir outputs/llm_guided/soft_only_alpha01 \
+  --no-use-risk-hint \
+  --use-soft-targets
+```
+
+Output:
+- `outputs/llm_guided/*/results_summary.csv`
+- `outputs/llm_guided/*/metrics_summary.json`
+- `outputs/llm_guided/*/best_model.pt`
+
+Low-memory settings:
+- reduce `train.batch_size`
+- reduce `model.max_length`
+
+## 8. Teacher Predictions on Full Unlabeled Set
+Input:
+- teacher checkpoints
+- `spam_email_data.log`
+
+Commands:
 ```bash
 python scripts/predict_all_unlabeled.py \
   --config configs/baseline.yaml \
@@ -128,36 +176,6 @@ python scripts/predict_all_unlabeled.py \
 ```
 
 ```bash
-python scripts/predict_all_unlabeled.py \
-  --config configs/baseline.yaml \
-  --model-path outputs/formal_baselines/models/structured_only_lgbm/structured_only_lgbm.joblib \
-  --input-path spam_email_data.log \
-  --raw-format log \
-  --rules-config configs/weak_label_rules.yaml \
-  --output-csv outputs/predictions/structured_only_lgbm_all.csv
-```
-
-```bash
-python scripts/predict_all_unlabeled.py \
-  --config configs/baseline.yaml \
-  --model-path outputs/formal_baselines/models/text_plus_structured_lr/text_plus_structured_lr.joblib \
-  --input-path spam_email_data.log \
-  --raw-format log \
-  --rules-config configs/weak_label_rules.yaml \
-  --output-csv outputs/predictions/text_plus_structured_lr_all.csv
-```
-
-Transformer teacher predictions:
-```bash
-python scripts/predict_text_transformer.py \
-  --config configs/text_transformer.yaml \
-  --checkpoint outputs/multilingual_dapt_comparison/multilingual_bert_base/best_model.pt \
-  --input-path spam_email_data.log \
-  --raw-format log \
-  --output-csv outputs/predictions/multilingual_bert_base_all.csv
-```
-
-```bash
 python scripts/predict_text_transformer.py \
   --config configs/text_transformer.yaml \
   --checkpoint outputs/multilingual_dapt_comparison/multilingual_bert_dapt/best_model.pt \
@@ -165,19 +183,11 @@ python scripts/predict_text_transformer.py \
   --raw-format log \
   --output-csv outputs/predictions/multilingual_bert_dapt_all.csv
 ```
-Input:
-- full unlabeled mail log
-- saved baseline and Transformer checkpoints
 
 Output:
 - `outputs/predictions/*.csv`
 
-If GPU memory is tight for Transformer prediction:
-- reduce the batch size in `configs/text_transformer.yaml`
-- reduce `model.max_length`
-
-## 7. Build Consensus Trusted Silver
-Command:
+## 9. Build Consensus Trusted Silver
 ```bash
 python scripts/build_consensus_silver.py \
   --text-lr-csv outputs/predictions/text_only_lr_all.csv \
@@ -189,19 +199,8 @@ python scripts/build_consensus_silver.py \
   --stats-json data/annotation/silver/consensus_trusted_silver_stats.json \
   --min-teachers-agree 4
 ```
-Input:
-- five teacher prediction files
 
-Output:
-- `data/annotation/silver/consensus_trusted_silver.csv`
-- `data/annotation/silver/consensus_trusted_silver_stats.json`
-
-If silver count is too small:
-- lower `--min-teachers-agree` carefully
-- loosen class thresholds only after checking precision risk
-
-## 8. Build Semi-Supervised Dataset
-Command:
+## 10. Build Semi-Supervised Dataset
 ```bash
 python scripts/build_semi_supervised_dataset.py \
   --gold-csv data/annotation/gold/gold_v2.csv \
@@ -211,20 +210,8 @@ python scripts/build_semi_supervised_dataset.py \
   --gold-weight 1.0 \
   --silver-weight 0.5
 ```
-Input:
-- Gold v2
-- consensus trusted silver
 
-Output:
-- `data/annotation/semi_supervised/semi_supervised_train.csv`
-- `data/annotation/semi_supervised/semi_supervised_stats.json`
-
-If silver quality is uncertain:
-- keep `--silver-weight` at `0.3` or `0.5`
-- do not raise silver weight before reviewing per-class impact
-
-## 9. Run Semi-Supervised Comparison
-Command:
+## 11. Run Semi-Supervised Comparison
 ```bash
 python scripts/run_semi_supervised_comparison.py \
   --gold-csv data/annotation/gold/gold_v2.csv \
@@ -239,21 +226,8 @@ python scripts/run_semi_supervised_comparison.py \
   --lr 2e-5 \
   --silver-weight 0.5
 ```
-Input:
-- Gold v2
-- trusted silver
-- local base and DAPT checkpoints
 
-Output:
-- `outputs/semi_supervised_comparison/results_summary.csv`
-- per-experiment metrics under `outputs/semi_supervised_comparison/*/`
-
-If GPU memory is tight:
-- reduce `--batch-size`
-- reduce `--max-length`
-
-## 10. Generate Final Public Summary
-Command:
+## 12. Summarize Final Results
 ```bash
 python scripts/summarize_final_closed_loop.py \
   --gold-v1-csv data/annotation/clean_labeled_dataset.csv \
@@ -266,10 +240,18 @@ python scripts/summarize_final_closed_loop.py \
   --semi-summary-csv outputs/semi_supervised_comparison/results_summary.csv \
   --output-dir outputs/final_summary
 ```
-Input:
-- key stats and experiment outputs
 
-Output:
-- `outputs/final_summary/final_closed_loop_results.csv`
-- `outputs/final_summary/final_closed_loop_summary.md`
-- `outputs/final_summary/final_interview_bullets.md`
+## 13. Key Public Files
+Keep for GitHub:
+- `README.md`
+- `RUNBOOK.md`
+- `PROJECT_STRUCTURE.md`
+- `docs/*`
+- `outputs/final_summary/*`
+
+Keep local only:
+- raw logs
+- annotation CSVs
+- model checkpoints
+- prediction dumps
+- large experiment outputs

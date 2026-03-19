@@ -1,0 +1,30 @@
+project:
+  seed: 42
+  output_dir: outputs
+
+data:
+  train_path: data/raw/train.log
+  valid_path: data/raw/valid.log
+  test_path: data/raw/test.log
+  raw_format: auto
+  id_column: id
+  label_column: label
+  valid_size: 0.2
+  stratify: true
+
+fields:
+  text_fields: [subject, content, doccontent]
+
+model:
+  pretrained_model_name: bert-base-chinese   # or hfl/chinese-roberta-wwm-ext
+  num_labels: 5
+  max_length: 256
+  structured_hidden_dim: 64
+  fusion_dropout: 0.2
+
+train:
+  batch_size: 16
+  epochs: 3
+  lr: 2e-5
+  weight_decay: 0.01
+  num_workers: 0

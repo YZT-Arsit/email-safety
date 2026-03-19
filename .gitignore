@@ -1,5 +1,6 @@
 # OS / IDE
 .DS_Store
+._*
 .vscode/
 .idea/
 
@@ -19,24 +20,17 @@ env/
 .env
 .env.*
 
-# Logs
+# Logs / notebooks
 logs/
 *.log
-
-# Notebooks
 .ipynb_checkpoints/
 
-# Local models and checkpoints
-models/
-outputs/dapt_multilingual_bert/
-outputs/multilingual_dapt_comparison/*/best_model.pt
-outputs/semi_supervised_comparison/*/best_model.pt
-outputs/transformer_round1/
-
-# Large or private data
+# Large raw data
 spam_email_data.log
 data/raw/
 data/sample/*.log
+
+# Private annotation and processed data
 data/annotation/*.csv
 data/annotation/*.json
 data/annotation/gold/*.csv
@@ -48,12 +42,21 @@ data/annotation/semi_supervised/*.json
 data/processed/
 data/mlm_corpus/mail_corpus.txt
 
-# Large outputs and intermediate predictions
+# Local models and checkpoints
+models/
+*.pt
+*.bin
+*.safetensors
+
+# Large outputs and experiment artifacts
 outputs/predictions/
 outputs/formal_baselines/
 outputs/modelscope_download/
 outputs/multilingual_dapt_comparison/
 outputs/semi_supervised_comparison/
+outputs/llm_guided/
+outputs/llm_labeling/
+outputs/dapt_multilingual_bert/
 outputs/relabel_pool/
 outputs/reports/
 outputs/round2_comparison/
@@ -65,8 +68,9 @@ outputs/submissions/
 !outputs/final_summary/final_closed_loop_summary.md
 !outputs/final_summary/final_interview_bullets.md
 
-# Small public metadata that is safe to keep if desired
+# Small public sample metadata
 !data/sample/README.md
 
-# 忽略旧数据备份文件夹
-archive/
+# Ignore bulky legacy snapshots
+archive/data_legacy/
+archive/outputs_legacy/

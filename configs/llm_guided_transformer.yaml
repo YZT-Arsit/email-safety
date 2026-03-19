@@ -1,9 +1,8 @@
 project:
   seed: 42
-  output_dir: outputs/llm_guided_transformer
-
+  output_dir: outputs/llm_guided
 data:
-  input_path: data/annotation/gold/gold_v2.csv
+  input_path: data/annotation/gold/gold_v2_llm_guided.csv
   raw_format: csv
   id_column: id
   label_column: manual_label
@@ -14,28 +13,27 @@ data:
   valid_ratio: 0.15
   test_ratio: 0.15
   processed_dir: data/processed/llm_guided_transformer
-
 fields:
-  text_fields: [subject, content, doccontent]
-
+  text_fields:
+  - subject
+  - content
+  - doccontent
 preprocess:
   lowercase: true
   remove_urls: false
   max_text_length: 5000
-
 model:
-  pretrained_model_name: bert-base-chinese
+  pretrained_model_name: models/bert-base-multilingual-cased
   max_length: 256
   num_labels: 5
-
 train:
   epochs: 3
   batch_size: 8
   lr: 2e-5
   weight_decay: 0.01
   num_workers: 0
-  distill_alpha: 0.5
+  distill_alpha: 0.1
   temperature: 2.0
-  use_risk_hint: true
+  use_risk_hint: false
   use_soft_targets: true
   hint_max_chars: 160

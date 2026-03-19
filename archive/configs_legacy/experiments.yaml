@@ -1,0 +1,24 @@
+experiments:
+  baseline_compare:
+    enabled: true
+    models: [logistic_regression, lightgbm]
+
+  modality_ablation:
+    enabled: true
+    settings:
+      - name: text_only
+        use_text: true
+        use_structured: false
+      - name: structured_only
+        use_text: false
+        use_structured: true
+      - name: text_structured_fusion
+        use_text: true
+        use_structured: true
+
+  text_field_ablation:
+    enabled: true
+    field_sets:
+      - [subject]
+      - [subject, content]
+      - [subject, content, doccontent]

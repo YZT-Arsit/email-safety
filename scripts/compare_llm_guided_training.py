@@ -115,7 +115,7 @@ def _run_eval(checkpoint_path: str, df: pd.DataFrame, cfg: dict, output_dir: Pat
     ) if use_risk_hint else None
     labels = df[cfg["data"]["label_column"]].map(label_to_id).values
 
-    tokenizer = AutoTokenizer.from_pretrained(backbone_path, local_files_only=False)
+    tokenizer = AutoTokenizer.from_pretrained(backbone_path, local_files_only=True)
     ds = LLMGuidedTextDataset(texts, tokenizer, checkpoint["max_length"], labels=labels, risk_hints=hints)
     loader = DataLoader(ds, batch_size=int(cfg["train"].get("batch_size", 8)), shuffle=False)
 
